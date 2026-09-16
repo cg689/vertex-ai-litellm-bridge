@@ -1,0 +1,38 @@
+# 默认：文本文件在仓库内统一用 LF
+* text=auto eol=lf
+
+# ---------------------------------------------------------------
+# Windows 批处理：仓库内必须保持 CRLF
+# 否则 clone 到 Linux/macOS 或某些编辑器再保存一次，文件就坏了
+# （cmd.exe 遇到 LF 会从错误的字节偏移执行，报错词是单词被吃掉开头的残片）
+# 注意：模板文件后缀是 .example，* .bat 匹配不到，必须显式写
+# ---------------------------------------------------------------
+start-litellm.bat.example text eol=crlf
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# PowerShell：同样保持 CRLF（BOM 由文件自身携带，git 不会动它）
+*.ps1 text eol=crlf
+
+# ---------------------------------------------------------------
+# Python / Markdown / YAML：LF 即可
+# ---------------------------------------------------------------
+*.py   text eol=lf
+*.md   text eol=lf
+*.yml  text eol=lf
+*.yaml text eol=lf
+*.example text eol=lf
+
+# 上面 *.example 是兜底，下面把批处理模板再钉回来（后者优先）
+start-litellm.bat.example text eol=crlf
+
+# ---------------------------------------------------------------
+# 二进制：不做任何转换
+# ---------------------------------------------------------------
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.gif  binary
+*.ico  binary
+*.zip  binary
+*.exe  binary

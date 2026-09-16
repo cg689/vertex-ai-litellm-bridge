@@ -1,0 +1,33 @@
+# ---- 凭据类：绝不提交 ----
+*.json
+!assets/*.json
+config.yaml
+config.yaml.bak-*
+*.pem
+*.key
+.env
+.env.*
+secrets/
+*zcode-litellm*
+
+# ---- 运行时产物 ----
+logs/
+*.log
+venv/
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+
+# ---- 编辑器 / 系统 ----
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ---- 临时 / 归档 ----
+_obsolete/
+*.bak
+*.tmp
+_*.py

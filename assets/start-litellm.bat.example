@@ -1,0 +1,47 @@
+@echo off
+REM ============================================================
+REM  LiteLLM proxy for ZCode -> Vertex AI (Gemini)
+REM  Endpoint  : http://127.0.0.1:4000
+REM  Master key: set it in config.yaml, never hardcode it here
+REM
+REM  Called by the scheduled task "ZCode LiteLLM Vertex Proxy"
+REM  every 5 minutes as a watchdog. If port 4000 is already
+REM  listening this script exits immediately, so repeated calls
+REM  are harmless.
+REM
+REM  IMPORTANT: this file must stay CRLF + ASCII (no BOM).
+REM  LF line endings, a UTF-8 BOM, or non-ASCII characters in
+REM  comments all make cmd.exe fail silently or garble %VAR%.
+REM  Keep every comment in plain English.
+REM ============================================================
+
+setlocal
+set "LITELLM_DIR=C:\Users\<USER>\.zcode\litellm"
+set "LOGFILE=%LITELLM_DIR%\logs\proxy.log"
+
+if not exist "%LITELLM_DIR%\logs" mkdir "%LITELLM_DIR%\logs"
+
+REM --- watchdog guard: already running? then do nothing ---
+netstat -ano | findstr "127.0.0.1:4000" | findstr "LISTENING" >nul 2>&1
+if not errorlevel 1 (
+  echo [%date% %time%] port 4000 already listening, skip >> "%LOGFILE%"
+  exit /b 0
+)
+
+REM --- outbound proxy: local v2rayN HTTP inbound port ---
+REM Change only this line if the proxy port changes.
+REM On Windows env vars are case-insensitive, so setting the
+REM upper-case names also covers https_proxy / http_proxy.
+set "PROXY=http://127.0.0.1:10808"
+set "HTTPS_PROXY=http://127.0.0.1:10808"
+set "HTTP_PROXY=http://127.0.0.1:10808"
+set "NO_PROXY=127.0.0.1,localhost"
+
+cd /d "%LITELLM_DIR%"
+
+echo [%date% %time%] starting litellm proxy=%PROXY% >> "%LOGFILE%"
+
+"%LITELLM_DIR%\venv\Scripts\litellm.exe" --config "%LITELLM_DIR%\config.yaml" --host 127.0.0.1 --port 4000 --num_workers 1 >> "%LOGFILE%" 2>&1
+
+echo [%date% %time%] litellm exited with code %errorlevel% >> "%LOGFILE%"
+exit /b %errorlevel%
