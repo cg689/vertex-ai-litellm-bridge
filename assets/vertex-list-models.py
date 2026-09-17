@@ -37,7 +37,7 @@ DEFAULT_CANDIDATES = [
 
 ap = argparse.ArgumentParser()
 ap.add_argument("--config", default=DEFAULT_CFG, help="LiteLLM config.yaml 路径")
-ap.add_argument("--proxy", default="http://127.0.0.1:10808", help="出网代理")
+ap.add_argument("--proxy", default="http://127.0.0.1:7897", help="出网代理（Clash Verge Rev mixed-port）")
 ap.add_argument("candidates", nargs="*", help="要探测的模型名（留空用内置清单）")
 args = ap.parse_args()
 

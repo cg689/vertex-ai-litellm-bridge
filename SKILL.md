@@ -298,20 +298,29 @@ Get-ScheduledTaskInfo -TaskName "<任务名>" | Select LastRunTime, LastTaskResu
 
 ### ⚠️ 隐性依赖：出网代理必须比 LiteLLM 先活
 
-LiteLLM 自己不需要交互会话（S4U 能连 `127.0.0.1:10808`），
-**但 `10808` 上那个翻墙客户端（v2rayN）是用户级 GUI 程序，用户登录后才启动。**
+LiteLLM 自己不需要交互会话（S4U 能连 `127.0.0.1:7897`），
+**但 `7897` 上那个翻墙客户端（2026-09-16 起是 Clash Verge Rev）是用户级 GUI 程序，用户登录后才启动。**
 
-链路实际是：`ZCode → LiteLLM(S4U) → v2rayN(用户会话) → Google`
+链路实际是：`ZCode → LiteLLM(S4U) → Clash Verge Rev(用户会话) → Google`
+
+> 🔴 **2026-09-16 端口变更**：出网代理端口从 **`10808`（v2rayN）改成 `7897`（Clash Verge Rev 的 mixed-port）**。
+> v2rayN 已整体删除，旧值 `10808` 已无人监听。凡见到 `10808` 一律当过期处理。
+> 改端口的连带影响：`start-litellm.bat`、`assets/*.py` 的默认值、诊断脚本都要同步。
 
 后果：
-- 用户没登录 → v2rayN 没起 → LiteLLM 活着但**所有请求 502**
-- 开机后 v2rayN 启动比 LiteLLM 晚 → 头几秒的请求失败（`num_retries` 能兜一部分）
+- 用户没登录 → 翻墙客户端没起 → LiteLLM 活着但**所有请求 502**
+- 开机后翻墙客户端启动比 LiteLLM 晚 → 头几秒的请求失败（`num_retries` 能兜一部分）
+- **Clash Verge 未启动时，LiteLLM 必然全 500**（`httpx.ProxyError: Cannot connect to host 127.0.0.1:7897`）
 
 **排查时先分别确认这两件事**，不要只看 LiteLLM 在不在：
 ```bash
-netstat -ano | grep -E "127.0.0.1:(4000|10808)" | grep LISTENING
+netstat -ano | grep -E "127.0.0.1:(4000|7897)" | grep LISTENING
 ```
 两个端口都在监听才算链路完整。
+
+**更稳的做法（2026-09-16 起推荐）**：在 Clash Verge 里装 **服务模式** 并开 TUN，
+让内核作为 Windows 服务常驻 —— 这样即使 GUI 退出，`7897` 依然在监听，LiteLLM 不会再被带崩。
+（这也是当初换掉 v2rayN 的主要原因，详见技能 `v2rayn-dual-link-healthcheck`。）
 
 ### 完整注册脚本
 
@@ -448,8 +457,8 @@ Windows 下 Python 的 `os.environ` **大小写不敏感**。
 
 **Python 脚本正确写法 —— 只赋值，不要 pop**：
 ```python
-os.environ["HTTPS_PROXY"] = "http://127.0.0.1:10808"
-os.environ["HTTP_PROXY"] = "http://127.0.0.1:10808"
+os.environ["HTTPS_PROXY"] = "http://127.0.0.1:7897"
+os.environ["HTTP_PROXY"] = "http://127.0.0.1:7897"
 ```
 > ⚠️ 踩过的坑：写完上面两行再 `os.environ.pop("https_proxy", None)`，
 > 因为大小写不敏感，pop 掉的是**同一个变量** —— 等于把刚设的代理删了，
@@ -458,11 +467,12 @@ os.environ["HTTP_PROXY"] = "http://127.0.0.1:10808"
 **bash 里启动子进程（要清干净再加）**：
 ```bash
 env -u HTTP_PROXY -u HTTPS_PROXY -u http_proxy -u https_proxy -u ALL_PROXY -u all_proxy \
-    HTTPS_PROXY=http://127.0.0.1:10808 https_proxy=http://127.0.0.1:10808 \
-    HTTP_PROXY=http://127.0.0.1:10808 http_proxy=http://127.0.0.1:10808 \
+    HTTPS_PROXY=http://127.0.0.1:7897 https_proxy=http://127.0.0.1:7897 \
+    HTTP_PROXY=http://127.0.0.1:7897 http_proxy=http://127.0.0.1:7897 \
     NO_PROXY=127.0.0.1,localhost no_proxy=127.0.0.1,localhost \
     <命令>
 ```
+> 端口以当前客户端为准：2026-09-16 起是 Clash Verge Rev 的 **7897**（旧值 10808 已作废）。
 
 ### 2. Git Bash 调 .bat
 
@@ -507,10 +517,19 @@ open(p, "wb").write(b"\xef\xbb\xbf" + b)   # .ps1 加 BOM；.bat 去掉这行
 | 项 | 值 |
 |---|---|
 | LiteLLM | `C:\Users\<USER>\.zcode\litellm\`，端口 4000，master key 见 `config.yaml`（**不要写进本文件**） |
-| 计划任务 | `ZCode LiteLLM Vertex Proxy` |
-| 出网代理 | `127.0.0.1:10808`（v2rayN HTTP 入站） |
+| 计划任务 | `ZCode LiteLLM Vertex Proxy`（S4U 无窗口，登录触发 + 每 5 分钟重复看门狗） |
+| 出网代理 | **`127.0.0.1:7897`** —— Clash Verge Rev 的 mixed-port（2026-09-16 起） |
+| ~~出网代理（旧）~~ | ~~`127.0.0.1:10808`（v2rayN HTTP 入站）~~ —— **v2rayN 已整体删除，勿再用** |
 | LiteLLM venv 自带 `google-auth` | 可直接用它跑诊断，不用另装 |
 | 客户端 | ZCode，配置 `~/.zcode/v2/config.json` |
+| 启动脚本 | `C:\Users\<USER>\.zcode\litellm\start-litellm.bat`（CRLF + 纯 ASCII + 无 BOM，改完必须核验） |
+
+> 🔴 **换客户端/改端口时的必做检查**：`start-litellm.bat` 里写死了出网代理端口。
+> 删掉或换掉代理客户端后，LiteLLM 会立刻全量 500
+> （`httpx.ProxyError: Cannot connect to host 127.0.0.1:<port>`）。
+> 改完要**重启 LiteLLM 进程**（看门狗只在端口 4000 没监听时才拉起），
+> 并确认日志出现 `starting litellm proxy=http://127.0.0.1:<新端口>`。
+
 
 ---
 

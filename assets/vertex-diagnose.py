@@ -5,7 +5,7 @@ Vertex AI 链路体检脚本
     C:\\Users\\<USER>\\.zcode\\litellm\\venv\\Scripts\\python.exe vertex-diagnose.py
 
     # 非默认位置时用参数覆盖
-    ... vertex-diagnose.py --config D:\\x\\config.yaml --proxy http://127.0.0.1:10808
+    ... vertex-diagnose.py --config D:\\x\\config.yaml --proxy http://127.0.0.1:7897
 
 检查 4 层：
   1. 服务账号密钥能否换到 OAuth 令牌
@@ -29,8 +29,8 @@ DEFAULT_CFG = os.path.join(os.path.expanduser("~"), ".zcode", "litellm", "config
 
 _ap = argparse.ArgumentParser(add_help=True)
 _ap.add_argument("--config", default=DEFAULT_CFG, help="LiteLLM config.yaml 路径")
-_ap.add_argument("--proxy", default="http://127.0.0.1:10808",
-                 help="出网代理（本机翻墙代理的 HTTP 入站端口）")
+_ap.add_argument("--proxy", default="http://127.0.0.1:7897",
+                 help="出网代理（本机翻墙代理的 HTTP 入站端口；2026-09-16 起为 Clash Verge Rev 的 7897）")
 _ap.add_argument("--port", type=int, default=4000, help="LiteLLM 监听端口")
 _args = _ap.parse_args()
 

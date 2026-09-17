@@ -95,6 +95,6 @@ try {
 } catch {
   $lines += "port4000=(netstat 读取失败)"
 }
-$lines += "port10808=" + ((cmd /c 'netstat -ano | findstr "127.0.0.1:10808"' -join " ;; ") -replace "\s+", " ")
+$lines += "port7897=" + ((cmd /c 'netstat -ano | findstr "127.0.0.1:7897"' -join " ;; ") -replace "\s+", " ")
 
 [IO.File]::WriteAllLines($OUT, $lines)

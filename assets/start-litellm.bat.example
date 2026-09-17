@@ -28,13 +28,14 @@ if not errorlevel 1 (
   exit /b 0
 )
 
-REM --- outbound proxy: local v2rayN HTTP inbound port ---
+REM --- outbound proxy: local Clash Verge Rev mixed-port ---
 REM Change only this line if the proxy port changes.
+REM 2026-09-16: v2rayN (10808) removed; Clash Verge Rev mixed-port is 7897.
 REM On Windows env vars are case-insensitive, so setting the
 REM upper-case names also covers https_proxy / http_proxy.
-set "PROXY=http://127.0.0.1:10808"
-set "HTTPS_PROXY=http://127.0.0.1:10808"
-set "HTTP_PROXY=http://127.0.0.1:10808"
+set "PROXY=http://127.0.0.1:7897"
+set "HTTPS_PROXY=http://127.0.0.1:7897"
+set "HTTP_PROXY=http://127.0.0.1:7897"
 set "NO_PROXY=127.0.0.1,localhost"
 
 cd /d "%LITELLM_DIR%"
